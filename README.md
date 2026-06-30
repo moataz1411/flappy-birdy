@@ -19,4 +19,12 @@ Simple and fun arcade style game.
 
 ** languages used**
 - Python   
-- Pygame   
+- Pygame
+
+---
+
+**How to Play**
+- Download main.exe from the itch.io page.
+- Double-click on main.exe to launch the game.
+- Press Space or Left Mouse Button to make the bird fly.
+- Pass through the pipes to earn points.
