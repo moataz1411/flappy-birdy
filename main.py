@@ -5,8 +5,8 @@ pygame.init()
 pygame.mixer.init()
 clock=pygame.time.Clock()
 fps=60
-screen_width=864
-screen_height=936
+screen_width=720
+screen_height=780
 screen=pygame.display.set_mode((screen_width,screen_height))
 game_surface = pygame.Surface((screen_width, screen_height))
 pygame.display.set_caption('Flappy Bird')
@@ -38,6 +38,9 @@ fullscreen_on = pygame.image.load("img/fullscreen_on.png")
 fullscreen_off = pygame.image.load("img/fullscreen_off.png")
 fullscreen_on = pygame.transform.scale(fullscreen_on, (50,50))
 fullscreen_off = pygame.transform.scale(fullscreen_off, (50,50))
+exit_button_image = pygame.image.load('img/exit.png')
+exit_button_image = pygame.transform.scale(exit_button_image, (50, 50))
+
 pygame.mixer.music.load("sounds/music.mp3")
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
@@ -77,21 +80,21 @@ class Bird(pygame.sprite.Sprite):
         self.clicked=False
 
     def update(self):
-        if flying==True:
+        if flying:
             self.vel+=0.5
             if self.vel>8:
                 self.vel=8
             if self.rect.bottom<768:
                 self.rect.y += int(self.vel)
 
-        if game_over==False:
-            if pygame.mouse.get_pressed()[0]==1 and self.clicked==False:
-                self.clicked=True
+        if not game_over:
+            keys = pygame.key.get_pressed()
+            if (pygame.mouse.get_pressed()[0] or keys[pygame.K_SPACE]) and not self.clicked:
+                self.clicked = True
                 self.vel = -10
                 wing_fx.play()
-            if pygame.mouse.get_pressed()[0]==0:
-                self.clicked=False
-
+            if not pygame.mouse.get_pressed()[0] and not keys[pygame.K_SPACE]:
+                self.clicked = False
             self.counter +=1
             flap_cooldown=5
             if self.counter>flap_cooldown:
@@ -99,7 +102,6 @@ class Bird(pygame.sprite.Sprite):
                 self.index+=1
                 if self.index >=len(self.images):
                     self.index=0
-            self.image=self.images[self.index]
             self.image=pygame.transform.rotate(self.images[self.index],self.vel*-2)
         else:
             self.image=pygame.transform.rotate(self.images[self.index],-90)
@@ -150,6 +152,7 @@ bird_group.add(flappy)
 button=Button(screen_width//2-50, screen_height//2-100,button_image)
 mute_button=Button(screen_width - 60,10,sound_on)
 fullscreen_button=Button(screen_width -120,10,fullscreen_off)
+exit_button = Button(10, 10, exit_button_image)
 
 run=True
 while run:
@@ -209,8 +212,9 @@ while run:
     for event in pygame.event.get():
         if event.type==pygame.QUIT:
             run=False
-        if event.type==pygame.MOUSEBUTTONDOWN and flying==False and game_over==False :
-            flying=True
+        if (event.type == pygame.MOUSEBUTTONDOWN or (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE)) \
+            and not flying and not game_over:
+            flying = True
 
     if muted:
         mute_button.image=sound_off
@@ -230,6 +234,8 @@ while run:
 
     if fullscreen_button.draw():
         toggle_fullscreen()
+    if exit_button.draw():
+        run = False
 
     if fullscreen:
         scaled = pygame.transform.scale(
