@@ -5,9 +5,10 @@ pygame.init()
 pygame.mixer.init()
 clock=pygame.time.Clock()
 fps=60
-screen_width=720
-screen_height=780
+screen_width=864
+screen_height=936
 screen=pygame.display.set_mode((screen_width,screen_height))
+game_surface = pygame.Surface((screen_width, screen_height))
 pygame.display.set_caption('Flappy Bird')
 font =pygame.font.SysFont('Bauhaus 93', 60)
 white=(255,255,255)
@@ -21,6 +22,7 @@ last_pipe=pygame.time.get_ticks() - pipe_freq
 score=0
 pass_pipe=False
 muted = False
+fullscreen=False
 
 bg=pygame.image.load('img/bg.png')
 ground_img=pygame.image.load('img/ground.png')
@@ -32,13 +34,17 @@ sound_on=pygame.image.load("img/volume_on.png")
 sound_off=pygame.image.load("img/volume_off.png")
 sound_on = pygame.transform.scale(sound_on, (50, 50))
 sound_off = pygame.transform.scale(sound_off, (50, 50))
+fullscreen_on = pygame.image.load("img/fullscreen_on.png")
+fullscreen_off = pygame.image.load("img/fullscreen_off.png")
+fullscreen_on = pygame.transform.scale(fullscreen_on, (50,50))
+fullscreen_off = pygame.transform.scale(fullscreen_off, (50,50))
 pygame.mixer.music.load("sounds/music.mp3")
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
-    screen.blit(img, (x,y))
+    game_surface.blit(img, (x,y))
 
 def reset_game():
     pipe_group.empty()
@@ -46,6 +52,14 @@ def reset_game():
     flappy.rect.y=int(screen_height/2)
     score=0
     return score
+
+def toggle_fullscreen():
+    global screen, fullscreen
+    fullscreen = not fullscreen
+    if fullscreen:
+        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    else:
+        screen = pygame.display.set_mode((screen_width, screen_height))
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self,x,y):
@@ -113,7 +127,11 @@ class Button():
         self.clicked=False
     def draw(self):
         action=False
-        pos=pygame.mouse.get_pos()
+        mx, my = pygame.mouse.get_pos() 
+        if fullscreen:
+            mx = mx * screen_width / screen.get_width()
+            my = my * screen_height / screen.get_height()
+        pos = (mx, my)
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0]==1 and not self.clicked:
                 action=True
@@ -121,7 +139,7 @@ class Button():
         if pygame.mouse.get_pressed()[0]==0:
             self.clicked=False
 
-        screen.blit(self.image,(self.rect.x,self.rect.y))
+        game_surface.blit(self.image,(self.rect.x,self.rect.y))
         return action
 
 bird_group=pygame.sprite.Group()
@@ -131,17 +149,18 @@ bird_group.add(flappy)
 
 button=Button(screen_width//2-50, screen_height//2-100,button_image)
 mute_button=Button(screen_width - 60,10,sound_on)
+fullscreen_button=Button(screen_width -120,10,fullscreen_off)
 
 run=True
 while run:
     clock.tick(fps)
-    screen.blit(bg,(0,0))
-    bird_group.draw(screen)
+    game_surface.blit(bg,(0,0))
+    bird_group.draw(game_surface)
     bird_group.update()
-    pipe_group.draw(screen)
+    pipe_group.draw(game_surface)
     
 
-    screen.blit(ground_img,(ground_scroll,768))
+    game_surface.blit(ground_img,(ground_scroll,768))
 
     if len(pipe_group)>0:
         if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left\
@@ -203,5 +222,22 @@ while run:
             pygame.mixer.music.set_volume(0)
         else:
                 pygame.mixer.music.set_volume(0.5)
+
+    if fullscreen:
+        fullscreen_button.image = fullscreen_off   # أيقونة الخروج من الفول سكرين
+    else:
+        fullscreen_button.image = fullscreen_on    # أيقونة الدخول للفول سكرين
+
+    if fullscreen_button.draw():
+        toggle_fullscreen()
+
+    if fullscreen:
+        scaled = pygame.transform.scale(
+            game_surface,
+            (screen.get_width(), screen.get_height())
+        )
+        screen.blit(scaled, (0, 0))
+    else:
+        screen.blit(game_surface, (0, 0))
     pygame.display.update()
 pygame.quit()
