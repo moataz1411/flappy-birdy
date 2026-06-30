@@ -1,6 +1,14 @@
 import pygame
 from pygame.locals import*
 import random
+import sys
+import os
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 pygame.init()
 pygame.mixer.init()
 clock=pygame.time.Clock()
@@ -24,24 +32,26 @@ pass_pipe=False
 muted = False
 fullscreen=False
 
-bg=pygame.image.load('img/bg.png')
-ground_img=pygame.image.load('img/ground.png')
-wing_fx = pygame.mixer.Sound("sounds/wing.mp3")
-point_fx = pygame.mixer.Sound("sounds/point.mp3")
-die_fx = pygame.mixer.Sound("sounds/die.mp3")
-button_image=pygame.image.load('img/restart.png')
-sound_on=pygame.image.load("img/volume_on.png")
-sound_off=pygame.image.load("img/volume_off.png")
+bg=pygame.image.load(resource_path('img/bg.png'))
+ground_img=pygame.image.load(resource_path('img/ground.png'))
+wing_fx = pygame.mixer.Sound(resource_path("sounds/wing.mp3"))
+point_fx = pygame.mixer.Sound(resource_path("sounds/point.mp3"))
+die_fx = pygame.mixer.Sound(resource_path("sounds/die.mp3"))
+print(resource_path("sounds/wing.mp3"))
+print(os.path.exists(resource_path("sounds/wing.mp3")))
+button_image=pygame.image.load(resource_path('img/restart.png'))
+sound_on=pygame.image.load(resource_path("img/volume_on.png"))
+sound_off=pygame.image.load(resource_path("img/volume_off.png"))
 sound_on = pygame.transform.scale(sound_on, (50, 50))
 sound_off = pygame.transform.scale(sound_off, (50, 50))
-fullscreen_on = pygame.image.load("img/fullscreen_on.png")
-fullscreen_off = pygame.image.load("img/fullscreen_off.png")
+fullscreen_on = pygame.image.load(resource_path("img/fullscreen_on.png"))
+fullscreen_off = pygame.image.load(resource_path("img/fullscreen_off.png"))
 fullscreen_on = pygame.transform.scale(fullscreen_on, (50,50))
 fullscreen_off = pygame.transform.scale(fullscreen_off, (50,50))
-exit_button_image = pygame.image.load('img/exit.png')
+exit_button_image = pygame.image.load(resource_path('img/exit.png'))
 exit_button_image = pygame.transform.scale(exit_button_image, (50, 50))
 
-pygame.mixer.music.load("sounds/music.mp3")
+pygame.mixer.music.load(resource_path("sounds/music.mp3"))
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
 
@@ -70,8 +80,8 @@ class Bird(pygame.sprite.Sprite):
         self.images=[]
         self.index=0
         self.counter=0
-        for num in range(1,4):
-            img=pygame.image.load(f'img/bird{num}.png')
+        for num in range(1, 4):
+            img = pygame.image.load(resource_path(f"img/bird{num}.png"))
             self.images.append(img)
         self.image=self.images[self.index ]
         self.rect=self.image.get_rect()
@@ -109,7 +119,7 @@ class Bird(pygame.sprite.Sprite):
 class pipe(pygame.sprite.Sprite):
     def __init__(self, x, y, position):
         pygame.sprite.Sprite.__init__(self)
-        self.image=pygame.image.load('img/pipe.png')
+        self.image=pygame.image.load(resource_path('img/pipe.png'))
         self.rect=self.image.get_rect()
         if position ==1:
             self.image= pygame.transform.flip(self.image,False,True)
