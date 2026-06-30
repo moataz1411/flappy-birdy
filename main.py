@@ -2,10 +2,11 @@ import pygame
 from pygame.locals import*
 import random
 pygame.init()
+pygame.mixer.init()
 clock=pygame.time.Clock()
 fps=60
-screen_width=864
-screen_height=936
+screen_width=720
+screen_height=780
 screen=pygame.display.set_mode((screen_width,screen_height))
 pygame.display.set_caption('Flappy Bird')
 font =pygame.font.SysFont('Bauhaus 93', 60)
@@ -19,10 +20,21 @@ pipe_freq=1500
 last_pipe=pygame.time.get_ticks() - pipe_freq
 score=0
 pass_pipe=False
+muted = False
 
 bg=pygame.image.load('img/bg.png')
 ground_img=pygame.image.load('img/ground.png')
+wing_fx = pygame.mixer.Sound("sounds/wing.mp3")
+point_fx = pygame.mixer.Sound("sounds/point.mp3")
+die_fx = pygame.mixer.Sound("sounds/die.mp3")
 button_image=pygame.image.load('img/restart.png')
+sound_on=pygame.image.load("img/volume_on.png")
+sound_off=pygame.image.load("img/volume_off.png")
+sound_on = pygame.transform.scale(sound_on, (50, 50))
+sound_off = pygame.transform.scale(sound_off, (50, 50))
+pygame.mixer.music.load("sounds/music.mp3")
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
@@ -62,6 +74,7 @@ class Bird(pygame.sprite.Sprite):
             if pygame.mouse.get_pressed()[0]==1 and self.clicked==False:
                 self.clicked=True
                 self.vel = -10
+                wing_fx.play()
             if pygame.mouse.get_pressed()[0]==0:
                 self.clicked=False
 
@@ -92,17 +105,21 @@ class pipe(pygame.sprite.Sprite):
         if self.rect.right<0:
             self.kill()
 
-class button():
+class Button():
     def __init__(self,x,y, image):
         self.image=image
         self.rect=self.image.get_rect()
         self.rect.topleft=(x,y)
+        self.clicked=False
     def draw(self):
         action=False
         pos=pygame.mouse.get_pos()
         if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0]==1:
+            if pygame.mouse.get_pressed()[0]==1 and not self.clicked:
                 action=True
+                self.clicked=True
+        if pygame.mouse.get_pressed()[0]==0:
+            self.clicked=False
 
         screen.blit(self.image,(self.rect.x,self.rect.y))
         return action
@@ -112,7 +129,8 @@ pipe_group=pygame.sprite.Group()
 flappy=Bird(100,int(screen_height/2))
 bird_group.add(flappy)
 
-button=button(screen_width//2-50, screen_height//2-100,button_image)
+button=Button(screen_width//2-50, screen_height//2-100,button_image)
+mute_button=Button(screen_width - 60,10,sound_on)
 
 run=True
 while run:
@@ -133,16 +151,21 @@ while run:
         if pass_pipe==True:
             if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
                 score +=1
+                point_fx.play()
                 pass_pipe= False
 
     draw_text(str(score), font, white, int(screen_width/2), 20)
 
-    if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) or flappy.rect.top < 0:
+    if (pygame.sprite.groupcollide(bird_group, pipe_group, False, False) or flappy.rect.top < 0) and not game_over:
         game_over=True
+        pygame.mixer.music.stop()
+        die_fx.play()
 
-    if flappy.rect.bottom >= 768:
+    if flappy.rect.bottom >= 768 and not game_over:
         game_over=True
         flying=False
+        pygame.mixer.music.stop()
+        die_fx.play()
     if game_over == False and flying ==True:
         time_now=pygame.time.get_ticks()
         if time_now - last_pipe > pipe_freq:
@@ -158,15 +181,27 @@ while run:
             ground_scroll=0
         pipe_group.update()
 
-    if game_over ==True:
-       if button.draw()==True:
+    if game_over:
+       if button.draw():
            game_over=False
            score= reset_game()
+           pygame.mixer.music.play(-1)
 
     for event in pygame.event.get():
         if event.type==pygame.QUIT:
             run=False
         if event.type==pygame.MOUSEBUTTONDOWN and flying==False and game_over==False :
             flying=True
+
+    if muted:
+        mute_button.image=sound_off
+    else:
+        mute_button.image=sound_on
+    if mute_button.draw():
+        muted=not muted
+        if muted:
+            pygame.mixer.music.set_volume(0)
+        else:
+                pygame.mixer.music.set_volume(0.5)
     pygame.display.update()
 pygame.quit()
